@@ -50,7 +50,7 @@ export function useWebSocket(projectId: string | null): { connected: boolean, la
       setConnected(false)
     }
 
-    const handleError = (event: any) => {
+    const handleError = (event: { message: string }) => {
       setError(event.message)
     }
 
