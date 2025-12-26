@@ -1,10 +1,10 @@
 import express from 'express';
 import { authenticate } from '../middleware/authMiddleware';
 import { 
-  getQuestionsByStage, 
-  submitResponse, 
-  getResponses, 
-  getNextQuestions 
+  getQuestionsByStage,
+  submitResponse,
+  getResponses,
+  getNextQuestions
 } from '../controllers/questionController';
 
 const router = express.Router();
