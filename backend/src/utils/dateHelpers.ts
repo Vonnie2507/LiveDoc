@@ -1,4 +1,4 @@
-import { ValidationError } from './errorHandlers'
+import { ValidationError } from './errorHandlers';
 
 export function formatDateToISO(date: Date): string {
   if (!(date instanceof Date)) {
