@@ -22,65 +22,78 @@ export function useProject(projectId?: string): {
 
   useEffect(() => {
     if (projectId) {
-      const loadProject = async () => {
-        setLoading(true)
-        try {
-          const response = await apiClient.get(`/projects/${projectId}`)
+      setLoading(true)
+      apiClient.get(`/projects/${projectId}`)
+        .then(response => {
           setProject(response.data)
-          setError(null)
-        } catch (err: any) {
-          setError(err.response?.data?.message || 'Failed to load project')
-        } finally {
           setLoading(false)
-        }
-      }
-      loadProject()
+          setError(null)
+        })
+        .catch(err => {
+          setError(err.response?.data?.message || 'Failed to load project')
+          setLoading(false)
+        })
     }
   }, [projectId])
 
   const createProject = async (data: CreateProjectRequest): Promise<Project> => {
     try {
+      setLoading(true)
       const response = await apiClient.post('/projects', data)
+      setLoading(false)
+      setError(null)
       return response.data
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || 'Failed to create project'
       setError(errorMessage)
+      setLoading(false)
       throw new Error(errorMessage)
     }
   }
 
   const updateProject = async (id: string, data: UpdateProjectRequest): Promise<Project> => {
-    const originalProject = project
-    if (project && project.id === id) {
-      setProject({ ...project, ...data })
-    }
-    
+    const previousProject = project
     try {
-      const response = await apiClient.put(`/projects/${id}`, data)
       if (project && project.id === id) {
-        setProject(response.data)
+        setProject({ ...project, ...data })
       }
+      setLoading(true)
+      const response = await apiClient.put(`/projects/${id}`, data)
+      setProject(response.data)
+      setLoading(false)
+      setError(null)
       return response.data
     } catch (err: any) {
-      if (originalProject && project && project.id === id) {
-        setProject(originalProject)
+      if (previousProject) {
+        setProject(previousProject)
       }
       const errorMessage = err.response?.data?.message || 'Failed to update project'
       setError(errorMessage)
+      setLoading(false)
       throw new Error(errorMessage)
     }
   }
 
   const deleteProject = async (id: string): Promise<void> => {
-    const originalProjects = [...projects]
-    setProjects(projects.filter(p => p.id !== id))
-    
+    const previousProjects = projects
+    const previousProject = project
     try {
+      setProjects(projects.filter(p => p.id !== id))
+      if (project && project.id === id) {
+        setProject(null)
+      }
+      setLoading(true)
       await apiClient.delete(`/projects/${id}`)
+      setLoading(false)
+      setError(null)
     } catch (err: any) {
-      setProjects(originalProjects)
+      setProjects(previousProjects)
+      if (previousProject) {
+        setProject(previousProject)
+      }
       const errorMessage = err.response?.data?.message || 'Failed to delete project'
       setError(errorMessage)
+      setLoading(false)
       throw new Error(errorMessage)
     }
   }
@@ -94,7 +107,7 @@ export function useProject(projectId?: string): {
       if (response.status === 409) {
         return false
       }
-      throw new Error('Unexpected response status')
+      throw new Error('Failed to acquire lock')
     } catch (err: any) {
       if (err.response?.status === 409) {
         return false
@@ -109,7 +122,7 @@ export function useProject(projectId?: string): {
     try {
       await apiClient.delete(`/projects/${id}/lock`)
     } catch (err: any) {
-      // Handle success silently, log warning on failure but do not throw
+      // Log warning but do not throw
     }
   }
 
@@ -119,7 +132,8 @@ export function useProject(projectId?: string): {
       setProject(response.data)
       setError(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load project')
+      const errorMessage = err.response?.data?.message || 'Failed to load project'
+      setError(errorMessage)
     }
   }
 
@@ -129,7 +143,8 @@ export function useProject(projectId?: string): {
       setProjects(response.data)
       setError(null)
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load projects')
+      const errorMessage = err.response?.data?.message || 'Failed to load projects'
+      setError(errorMessage)
     }
   }
 
