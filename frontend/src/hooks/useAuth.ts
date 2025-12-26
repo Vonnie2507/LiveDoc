@@ -1,44 +1,36 @@
 import { useState, useEffect } from 'react';
 import { User } from '../types/models';
-import { apiClient } from '../utils/apiClient';
-import { localStorageHelpers } from '../utils/localStorageHelpers';
+import apiClient from '../utils/apiClient';
+import * as localStorageHelpers from '../utils/localStorageHelpers';
 
-export function useAuth(): {
-  user: User | null;
-  token: string | null;
-  loading: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  refreshToken: () => Promise<void>;
-  updateProfile: (userData: Partial<User>) => Promise<void>;
-} {
+export function useAuth(): { user: User | null; token: string | null; loading: boolean; error: string | null; login: (email: string, password: string) => Promise<void>; logout: () => void; refreshToken: () => Promise<void>; updateProfile: (userData: Partial<User>) => Promise<void> } {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorageHelpers.getToken());
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const login = async (email: string, password: string): Promise<void> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      if (!email) {
-        throw new Error('Email is required');
-      }
-      if (!password) {
-        throw new Error('Password is required');
-      }
+    setLoading(true);
+    setError(null);
+    
+    if (!email) {
+      throw new Error('Email is required');
+    }
+    
+    if (!password) {
+      throw new Error('Password is required');
+    }
 
+    try {
       const response = await apiClient.post('/auth/login', { email, password });
-      const { token: authToken, user: userData } = response.data;
+      const { token: responseToken, user: responseUser } = response.data;
       
-      localStorageHelpers.setToken(authToken);
-      setToken(authToken);
-      setUser(userData);
+      localStorageHelpers.setToken(responseToken);
+      setToken(responseToken);
+      setUser(responseUser);
       setLoading(false);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed');
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Login failed');
       setLoading(false);
     }
   };
@@ -52,17 +44,18 @@ export function useAuth(): {
   };
 
   const refreshToken = async (): Promise<void> => {
+    setLoading(true);
+    
     try {
-      setLoading(true);
       const response = await apiClient.post('/auth/refresh');
-      const { token: newToken, user: userData } = response.data;
+      const { token: newToken, user: responseUser } = response.data;
       
       localStorageHelpers.setToken(newToken);
       setToken(newToken);
-      setUser(userData);
+      setUser(responseUser);
       setLoading(false);
-    } catch (err: any) {
-      if (err.response?.status === 401) {
+    } catch (error: any) {
+      if (error.response?.status === 401) {
         logout();
       } else {
         setError('Session expired');
@@ -76,16 +69,17 @@ export function useAuth(): {
       throw new Error('Not authenticated');
     }
     
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      setError(null);
       const response = await apiClient.put(`/users/${user.id}`, userData);
       const updatedUser = response.data;
       
       setUser(updatedUser);
       setLoading(false);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Failed to update profile');
       setLoading(false);
     }
   };
