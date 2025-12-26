@@ -49,6 +49,5 @@ export function formatDateTime(date: Date | string): string {
 export function formatPercentage(value: number, decimals: number = 0): string {
   const multiplied = value * 100;
   const rounded = multiplied.toFixed(decimals);
-  
   return rounded + '%';
 }
