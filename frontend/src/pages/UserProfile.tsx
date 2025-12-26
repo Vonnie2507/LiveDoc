@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { QuestionInputField } from '../components/QuestionInputField';
 import { TouchTargetButton } from '../components/TouchTargetButton';
-import { validateEmail } from '../utils/validators';
+import { validators } from '../utils/validators';
 
 export function UserProfile(): JSX.Element {
   const { user, updateProfile } = useAuth();
@@ -12,8 +12,8 @@ export function UserProfile(): JSX.Element {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -32,7 +32,7 @@ export function UserProfile(): JSX.Element {
       return;
     }
 
-    if (!validateEmail(email)) {
+    if (!validators.validateEmail(email)) {
       setErrorMessage('Invalid email format');
       return;
     }
@@ -67,71 +67,58 @@ export function UserProfile(): JSX.Element {
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (error) {
-      setErrorMessage(`Failed to update profile: ${(error as Error).message}`);
+    } catch (error: any) {
+      setErrorMessage('Failed to update profile: ' + error.message);
     }
   };
 
   return (
     <div>
       <h1>My Profile</h1>
-      
       <QuestionInputField
         type="text"
         value={name}
         onChange={setName}
         placeholder="Name"
-        required={true}
+        required
       />
-
       <QuestionInputField
         type="text"
         value={email}
         onChange={setEmail}
         placeholder="Email"
-        required={true}
+        required
       />
-
       <QuestionInputField
         type="text"
         value={phone}
         onChange={setPhone}
         placeholder="Phone"
-        required={false}
       />
-
       <div>Change Password</div>
-
       <QuestionInputField
         type="password"
         value={currentPassword}
         onChange={setCurrentPassword}
         placeholder="Current Password"
-        required={false}
       />
-
       <QuestionInputField
         type="password"
         value={newPassword}
         onChange={setNewPassword}
         placeholder="New Password"
-        required={false}
       />
-
       <QuestionInputField
         type="password"
         value={confirmPassword}
         onChange={setConfirmPassword}
         placeholder="Confirm Password"
-        required={false}
       />
-
       <TouchTargetButton variant="primary" onClick={handleSaveProfile}>
         Save Changes
       </TouchTargetButton>
-
-      {successMessage && <div>{successMessage}</div>}
       {errorMessage && <div>{errorMessage}</div>}
+      {successMessage && <div>{successMessage}</div>}
     </div>
   );
 }
