@@ -19,34 +19,10 @@ export function useExtraction(communicationId?: string): {
   const [processing, setProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (communicationId) {
-      getExtractions(communicationId)
-    }
-  }, [communicationId])
-
-  const triggerExtraction = async (commId: string, text: string): Promise<void> => {
-    try {
-      setError(null)
-      setProcessing(true)
-      await apiClient.post('/extractions/extract', {
-        communicationId: commId,
-        text
-      })
-      await getExtractions(commId)
-    } catch (err: any) {
-      const message = err.response?.data?.message || 'Failed to trigger extraction'
-      setError(message)
-      throw err
-    } finally {
-      setProcessing(false)
-    }
-  }
-
   const getExtractions = async (commId: string): Promise<void> => {
+    setLoading(true)
+    setError(null)
     try {
-      setError(null)
-      setLoading(true)
       const response = await apiClient.get(`/communications/${commId}/extractions`)
       setExtractions(response.data)
     } catch (err: any) {
@@ -58,15 +34,34 @@ export function useExtraction(communicationId?: string): {
     }
   }
 
+  useEffect(() => {
+    if (communicationId) {
+      getExtractions(communicationId)
+    }
+  }, [communicationId])
+
+  const triggerExtraction = async (commId: string, text: string): Promise<void> => {
+    setProcessing(true)
+    setError(null)
+    try {
+      await apiClient.post('/extractions/extract', { communicationId: commId, text })
+      await getExtractions(commId)
+    } catch (err: any) {
+      const message = err.response?.data?.message || 'Failed to trigger extraction'
+      setError(message)
+      throw err
+    } finally {
+      setProcessing(false)
+    }
+  }
+
   const confirmExtraction = async (extractionId: string): Promise<void> => {
     const originalExtractions = [...extractions]
+    setExtractions(prev => prev.map(ext => 
+      ext.id === extractionId ? { ...ext, status: 'confirmed' } : ext
+    ))
+    setError(null)
     try {
-      setError(null)
-      setExtractions(prev => prev.map(extraction => 
-        extraction.id === extractionId 
-          ? { ...extraction, status: 'confirmed' as const }
-          : extraction
-      ))
       await apiClient.put(`/extractions/${extractionId}/confirm`)
     } catch (err: any) {
       setExtractions(originalExtractions)
@@ -78,13 +73,11 @@ export function useExtraction(communicationId?: string): {
 
   const rejectExtraction = async (extractionId: string): Promise<void> => {
     const originalExtractions = [...extractions]
+    setExtractions(prev => prev.map(ext => 
+      ext.id === extractionId ? { ...ext, status: 'rejected' } : ext
+    ))
+    setError(null)
     try {
-      setError(null)
-      setExtractions(prev => prev.map(extraction => 
-        extraction.id === extractionId 
-          ? { ...extraction, status: 'rejected' as const }
-          : extraction
-      ))
       await apiClient.put(`/extractions/${extractionId}/reject`)
     } catch (err: any) {
       setExtractions(originalExtractions)
@@ -95,14 +88,12 @@ export function useExtraction(communicationId?: string): {
   }
 
   const applyExtraction = async (extractionId: string, projectId: string): Promise<void> => {
+    setProcessing(true)
+    setError(null)
     try {
-      setError(null)
-      setProcessing(true)
       await apiClient.post(`/extractions/${extractionId}/apply`, { projectId })
-      setExtractions(prev => prev.map(extraction => 
-        extraction.id === extractionId 
-          ? { ...extraction, status: 'applied' as const }
-          : extraction
+      setExtractions(prev => prev.map(ext => 
+        ext.id === extractionId ? { ...ext, status: 'applied' } : ext
       ))
     } catch (err: any) {
       const message = err.response?.data?.message || 'Failed to apply extraction'
@@ -114,14 +105,12 @@ export function useExtraction(communicationId?: string): {
   }
 
   const batchApply = async (extractionIds: string[], projectId: string): Promise<void> => {
+    setProcessing(true)
+    setError(null)
     try {
-      setError(null)
-      setProcessing(true)
       await apiClient.post('/extractions/batch-apply', { extractionIds, projectId })
-      setExtractions(prev => prev.map(extraction => 
-        extractionIds.includes(extraction.id) 
-          ? { ...extraction, status: 'applied' as const }
-          : extraction
+      setExtractions(prev => prev.map(ext => 
+        extractionIds.includes(ext.id) ? { ...ext, status: 'applied' } : ext
       ))
     } catch (err: any) {
       const message = err.response?.data?.message || 'Failed to batch apply extractions'
